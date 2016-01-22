@@ -14,7 +14,7 @@ int main (int argc, char **argv) {
 	MPI_Comm cartesian_grid_communicator, row_communicator, column_communicator;
 	MPI_Status status; 
 	MPI_Request request1, request2;
-
+	double compute_time = 0, mpi_time = 0 ,init_time = 0, global_init_time = 0, start;
 
 	// used to manage the cartesian grid
 	int dimensions[2], periods[2], coordinates[2], remain_dims[2];
@@ -48,6 +48,8 @@ int main (int argc, char **argv) {
 
 	// getting matrices from files at rank 0 only
 	// example: mpiexec -n 64 ./cannon matrix1 matrix2 [test]
+
+	start = MPI_Wtime();
 	if (rank == 0){
 		int row, column;
 		if ((fp = fopen (argv[1], "r")) != NULL){
@@ -213,10 +215,10 @@ int main (int argc, char **argv) {
 				(coordinates[0] + sqrt_size - coordinates[1]) % sqrt_size, 0, 
 				(coordinates[0] + coordinates[1]) % sqrt_size, 0, column_communicator, &status);
 	}
-
+	init_time += MPI_Wtime() - start;
+	MPI_Reduce(&init_time ,&global_init_time ,1 ,MPI_DOUBLE, MPI_MAX, 0, cartesian_grid_communicator);
 	// cannon's algorithm
 	int cannon_block_cycle;
-	double compute_time = 0, mpi_time = 0, start;
 	int C_index, A_row, A_column, B_column;
 	for(cannon_block_cycle = 0; cannon_block_cycle < sqrt_size; cannon_block_cycle++){
 		// compute partial result for this block cycle
@@ -283,8 +285,9 @@ int main (int argc, char **argv) {
 		}
 
 		printf("(%d,%d)x(%d,%d)=(%d,%d)\n", A_rows, A_columns, B_rows, B_columns, A_rows, B_columns);
-		printf("Computation time: %lf\n", compute_time);
-		printf("MPI time:         %lf\n", mpi_time);
+		printf("Computation time:	%lf\n", compute_time);
+		printf("MPI time:         	%lf\n", mpi_time);
+		printf("Initialization time:    %lf\n", init_time);
 
 		if (argc == 4){
 			// present results on the screen
