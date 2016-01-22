@@ -10,9 +10,11 @@ int main (int argc, char **argv) {
 	double *A_local_block = NULL, *B_local_block = NULL, *C_local_block = NULL;
 	int A_rows, A_columns, A_local_block_rows, A_local_block_columns, A_local_block_size;
 	int B_rows, B_columns, B_local_block_rows, B_local_block_columns, B_local_block_size;
-	int rank, size, sqrt_size, matrices_a_b_dimensions[4];
+	int rank, size, sqrt_size, matrices_a_b_dimensions[4], matrices_a_b_dimensions_recv[4];
 	MPI_Comm cartesian_grid_communicator, row_communicator, column_communicator;
 	MPI_Status status; 
+	MPI_Request request1, request2;
+
 
 	// used to manage the cartesian grid
 	int dimensions[2], periods[2], coordinates[2], remain_dims[2];
@@ -100,14 +102,7 @@ int main (int argc, char **argv) {
 	}
 
 	// send dimensions to all peers
-	if(rank == 0) {
-		int i;
-		for(i = 1; i < size; i++){
-			MPI_Send(matrices_a_b_dimensions, 4, MPI_INT, i, 0, cartesian_grid_communicator);
-		}
-	} else {
-		MPI_Recv(matrices_a_b_dimensions, 4, MPI_INT, 0, 0, cartesian_grid_communicator, &status);
-	}
+	MPI_Bcast(matrices_a_b_dimensions,4 ,MPI_INT ,0 ,cartesian_grid_communicator);
 
 	A_rows = matrices_a_b_dimensions[0];
 	A_columns = matrices_a_b_dimensions[1];
@@ -165,24 +160,22 @@ int main (int argc, char **argv) {
 	} 
 
 	// send a block to each process
-	if(rank == 0) {
-		int i;
-		for(i = 1; i < size; i++){
-			MPI_Send((A_array + (i * A_local_block_size)), A_local_block_size, MPI_DOUBLE, i, 0, cartesian_grid_communicator);
-			MPI_Send((B_array + (i * B_local_block_size)), B_local_block_size, MPI_DOUBLE, i, 0, cartesian_grid_communicator);
-		}
-		for(i = 0; i < A_local_block_size; i++){
-			A_local_block[i] = A_array[i];
-		}
-		for(i = 0; i < B_local_block_size; i++){
-			B_local_block[i] = B_array[i];
-		}
-	} else {
-		MPI_Recv(A_local_block, A_local_block_size, MPI_DOUBLE, 0, 0, cartesian_grid_communicator, &status);
-		MPI_Recv(B_local_block, B_local_block_size, MPI_DOUBLE, 0, 0, cartesian_grid_communicator, &status);
-	}
 
-	// fix initial arrangements before the core algorithm starts
+//	MPI_Scatter(A_array , A_local_block_size , MPI_DOUBLE , A_local_block, A_local_block_size, MPI_DOUBLE, 0, cartesian_grid_communicator);
+//	MPI_Scatter(B_array , B_local_block_size , MPI_DOUBLE , B_local_block, B_local_block_size, MPI_DOUBLE, 0, cartesian_grid_communicator);
+	MPI_Iscatter(A_array, A_local_block_size, MPI_DOUBLE ,  A_local_block, A_local_block_size, MPI_DOUBLE , 0,  cartesian_grid_communicator, &request1);
+	MPI_Iscatter(B_array, B_local_block_size, MPI_DOUBLE ,  B_local_block, B_local_block_size, MPI_DOUBLE , 0,  cartesian_grid_communicator, &request2);
+	if(rank == 0) {
+		for(i = 0; i < A_local_block_size; i++)
+			A_local_block[i] = A_array[i];
+		
+		for(i = 0; i < B_local_block_size; i++)
+			B_local_block[i] = B_array[i];
+	}
+	MPI_Wait(&request1, MPI_STATUS_IGNORE);
+	MPI_Wait(&request2, MPI_STATUS_IGNORE);
+
+// fix initial arrangements before the core algorithm starts
 	if(coordinates[0] != 0){
 		MPI_Sendrecv_replace(A_local_block, A_local_block_size, MPI_DOUBLE, 
 				(coordinates[1] + sqrt_size - coordinates[0]) % sqrt_size, 0, 
@@ -223,18 +216,16 @@ int main (int argc, char **argv) {
 	}
 
 	// get C parts from other processes at rank 0
+
+
+//	MPI_Gather(C_local_block, A_local_block_rows * B_local_block_columns, MPI_DOUBLE ,C_array, A_local_block_rows * B_local_block_columns, MPI_DOUBLE , 0, cartesian_grid_communicator); 
+	MPI_Igather(C_local_block, A_local_block_rows * B_local_block_columns, MPI_DOUBLE ,C_array, A_local_block_rows * B_local_block_columns, MPI_DOUBLE , 0, cartesian_grid_communicator, &request1); 
 	if(rank == 0) {
-		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++){
+		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++)
 			C_array[i] = C_local_block[i];
-		}
-		int i;
-		for(i = 1; i < size; i++){
-			MPI_Recv(C_array + (i * A_local_block_rows * B_local_block_columns), A_local_block_rows * B_local_block_columns, 
-				MPI_DOUBLE, i, 0, cartesian_grid_communicator, &status);
-		}
-	} else {
-		MPI_Send(C_local_block, A_local_block_rows * B_local_block_columns, MPI_DOUBLE, 0, 0, cartesian_grid_communicator);
 	}
+	MPI_Wait(&request1, MPI_STATUS_IGNORE);
+
 
 	// generating output at rank 0
 	if (rank == 0) {
