@@ -6,6 +6,9 @@
 
 int main (int argc, char **argv) {
 	FILE *fp;
+	MPI_File fh;
+	MPI_Offset filesize;
+	int bufsize;
 	double **A = NULL, **B = NULL, **C = NULL, *A_array = NULL, *B_array = NULL, *C_array = NULL;
 	double *A_local_block = NULL, *B_local_block = NULL, *C_local_block = NULL;
 	int A_rows, A_columns, A_local_block_rows, A_local_block_columns, A_local_block_size;
@@ -49,6 +52,41 @@ int main (int argc, char **argv) {
 	// getting matrices from files at rank 0 only
 	// example: mpiexec -n 64 ./cannon matrix1 matrix2 [test]
 
+	start = MPI_Wtime();
+	
+	MPI_File_open(MPI_COMM_WORLD, argv[1] , MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+	MPI_File_read(fh, matrices_a_b_dimensions, 2, MPI_INT, &status);
+	A_rows = matrices_a_b_dimensions[0];
+	A_columns = matrices_a_b_dimensions[1];
+	A_local_block_rows = A_rows / sqrt_size;
+	A_local_block_columns = A_columns / sqrt_size;
+	A_local_block_size = A_local_block_rows * A_local_block_columns;
+	A_local_block = (double *) malloc (A_local_block_size * sizeof(double));
+ 	//MPI_File_get_size(fh, &A_local_block_size);
+//	filesize = (filesize-2*sizeof(int))/sizeof(double);
+//	bufsize = filesize/size;
+	MPI_File_set_view(fh, rank*A_local_block_size*sizeof(double)+2*sizeof(int), MPI_DOUBLE, MPI_DOUBLE,"native", MPI_INFO_NULL);     //TODO what is native?
+	MPI_File_read(fh, A_local_block, A_local_block_size, MPI_DOUBLE, &status);
+ 	MPI_File_close(&fh);
+	
+
+	MPI_File_open(MPI_COMM_WORLD, argv[2] , MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+	MPI_File_read(fh, matrices_a_b_dimensions+2, 2, MPI_INT, &status);
+	B_rows = matrices_a_b_dimensions[2];
+	B_columns = matrices_a_b_dimensions[3];
+	B_local_block_rows = B_rows / sqrt_size;
+	B_local_block_columns = B_columns / sqrt_size;
+	B_local_block_size = B_local_block_rows * B_local_block_columns;
+	B_local_block = (double *) malloc (B_local_block_size * sizeof(double));
+	//MPI_File_get_size(fh, &B_local_block_size);
+//	filesize = (filesize-2*sizeof(int))/sizeof(double);
+//	bufsize = filesize/size;
+	MPI_File_set_view(fh, rank*B_local_block_size*sizeof(double)+2*sizeof(int), MPI_DOUBLE, MPI_DOUBLE,"native", MPI_INFO_NULL);     //TODO what is native?
+	MPI_File_read(fh, B_local_block, B_local_block_size, MPI_DOUBLE, &status);
+ 	MPI_File_close(&fh);
+
+
+/*
 	start = MPI_Wtime();
 	if (rank == 0){
 		int row, column;
@@ -102,7 +140,7 @@ int main (int argc, char **argv) {
 			MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 	}
-
+*/
 	// send dimensions to all peers
 /*
 	if(rank == 0) {
@@ -114,6 +152,7 @@ int main (int argc, char **argv) {
 		MPI_Recv(matrices_a_b_dimensions, 4, MPI_INT, 0, 0, cartesian_grid_communicator, &status);
 	}
 */
+/*
 	MPI_Bcast(matrices_a_b_dimensions,4 ,MPI_INT ,0 ,cartesian_grid_communicator);
 
 	A_rows = matrices_a_b_dimensions[0];
@@ -170,7 +209,7 @@ int main (int argc, char **argv) {
 			C[i] = (double *) malloc(B_columns * sizeof(double));
 		}
 	} 
-
+*/
 	// send a block to each process
 /*
 	if(rank == 0) {
@@ -192,6 +231,8 @@ int main (int argc, char **argv) {
 */
 //	MPI_Scatter(A_array , A_local_block_size , MPI_DOUBLE , A_local_block, A_local_block_size, MPI_DOUBLE, 0, cartesian_grid_communicator);
 //	MPI_Scatter(B_array , B_local_block_size , MPI_DOUBLE , B_local_block, B_local_block_size, MPI_DOUBLE, 0, cartesian_grid_communicator);
+
+/*
 	MPI_Iscatter(A_array, A_local_block_size, MPI_DOUBLE ,  A_local_block, A_local_block_size, MPI_DOUBLE , 0,  cartesian_grid_communicator, &request1);
 	MPI_Iscatter(B_array, B_local_block_size, MPI_DOUBLE ,  B_local_block, B_local_block_size, MPI_DOUBLE , 0,  cartesian_grid_communicator, &request2);
 	if(rank == 0) {
@@ -203,7 +244,7 @@ int main (int argc, char **argv) {
 	}
 	MPI_Wait(&request1, MPI_STATUS_IGNORE);
 	MPI_Wait(&request2, MPI_STATUS_IGNORE);
-
+*/
 // fix initial arrangements before the core algorithm starts
 	if(coordinates[0] != 0){
 		MPI_Sendrecv_replace(A_local_block, A_local_block_size, MPI_DOUBLE, 
@@ -261,6 +302,8 @@ int main (int argc, char **argv) {
 */
 //	MPI_Gather(C_local_block, A_local_block_rows * B_local_block_columns, MPI_DOUBLE ,C_array, A_local_block_rows * B_local_block_columns, MPI_DOUBLE , 0, cartesian_grid_communicator); 
 	MPI_Igather(C_local_block, A_local_block_rows * B_local_block_columns, MPI_DOUBLE ,C_array, A_local_block_rows * B_local_block_columns, MPI_DOUBLE , 0, cartesian_grid_communicator, &request1); 
+	
+	int i;
 	if(rank == 0) {
 		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++)
 			C_array[i] = C_local_block[i];
