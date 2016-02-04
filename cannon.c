@@ -76,7 +76,7 @@ int main (int argc, char **argv) {
 	A_local_block = (double *) malloc (A_local_block_size * sizeof(double));
 	MPI_Type_create_subarray(2, matrices_a_b_dimensions, A_local_block_dimentions, starts, MPI_ORDER_C, MPI_DOUBLE, &local_block_A);
 	MPI_Type_commit(&local_block_A);
-	MPI_File_open(cartesian_grid_communicator, "64x64-1.dat" , MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+	MPI_File_open(cartesian_grid_communicator, argv[1] , MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 	MPI_File_set_view(fh, 2*sizeof(int), MPI_DOUBLE, local_block_A,"native", MPI_INFO_NULL);     //TODO what is native?
 	MPI_File_read(fh, A_local_block, A_local_block_size, MPI_DOUBLE, &status);
  	MPI_File_close(&fh);
@@ -97,7 +97,7 @@ int main (int argc, char **argv) {
 	B_local_block = (double *) malloc (B_local_block_size * sizeof(double));
 	MPI_Type_create_subarray(2, matrices_a_b_dimensions+2, B_local_block_dimentions, starts+2, MPI_ORDER_C, MPI_DOUBLE, &local_block_B);
         MPI_Type_commit(&local_block_B);
-        MPI_File_open(cartesian_grid_communicator, "64x64-2.dat" , MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+        MPI_File_open(cartesian_grid_communicator, argv[2] , MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 	MPI_File_set_view(fh, 2*sizeof(int), MPI_DOUBLE, local_block_B,"native", MPI_INFO_NULL);     //TODO what is native?
 	MPI_File_read(fh, B_local_block, B_local_block_size, MPI_DOUBLE, &status);
  	MPI_File_close(&fh);
@@ -174,7 +174,7 @@ int main (int argc, char **argv) {
 
 	MPI_Type_create_subarray(2, matrix_c_dimensions, C_local_block_dimentions, starts+4, MPI_ORDER_C, MPI_DOUBLE, &local_block_C);
         MPI_Type_commit(&local_block_C);
-        MPI_File_open(cartesian_grid_communicator, "64x64-3.dat" , MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+        MPI_File_open(cartesian_grid_communicator, argv[3] , MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
         MPI_File_set_view(fh, 0, MPI_DOUBLE, local_block_C,"native", MPI_INFO_NULL);     //TODO what is native?
         MPI_File_write(fh, C_local_block, C_local_block_size, MPI_DOUBLE, &status);
         MPI_File_close(&fh);
@@ -206,7 +206,7 @@ int main (int argc, char **argv) {
        	        buff[i] = (double *) malloc(B_columns * sizeof(double));
         }
 	MPI_File fh2;
-	MPI_File_open(MPI_COMM_WORLD, "64x64-3.dat", MPI_MODE_RDONLY, MPI_INFO_NULL, &fh2);
+	MPI_File_open(MPI_COMM_WORLD, argv[3], MPI_MODE_RDONLY, MPI_INFO_NULL, &fh2);
 	MPI_File_read(fh2, buf, A_rows * B_columns, MPI_DOUBLE, MPI_STATUS_IGNORE);
 	MPI_File_close(&fh2);
 
@@ -243,9 +243,9 @@ int main (int argc, char **argv) {
 		printf("MPI time:         	%lf\n", mpi_time);
 		printf("Initialization time:    %lf\n", init_time);
 
-		if (argc == 6){
+		if (argc == 7){
 
-			if ((fp = fopen (argv[3], "r")) != NULL){
+			if ((fp = fopen (argv[4], "r")) != NULL){
 				fscanf(fp, "%d %d\n", &matrices_a_b_dimensions[0], &matrices_a_b_dimensions[1]);
 				A = (double **) malloc (matrices_a_b_dimensions[0] * sizeof(double *));
 				for (row = 0; row < matrices_a_b_dimensions[0]; row++){
@@ -255,10 +255,10 @@ int main (int argc, char **argv) {
 				}
 				fclose(fp);
 			} else {
-				if(rank == 0) fprintf(stderr, "error opening file for matrix A (%s)\n", argv[3]);
+				if(rank == 0) fprintf(stderr, "error opening file for matrix A (%s)\n", argv[4]);
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			}
-			if((fp = fopen (argv[4], "r")) != NULL){
+			if((fp = fopen (argv[5], "r")) != NULL){
 				fscanf(fp, "%d %d\n", &matrices_a_b_dimensions[2], &matrices_a_b_dimensions[3]);
 				B = (double **) malloc (matrices_a_b_dimensions[2] * sizeof(double *));
 				for(row = 0; row < matrices_a_b_dimensions[2]; row++){
@@ -268,7 +268,7 @@ int main (int argc, char **argv) {
 				}
 				fclose(fp);
 			} else {
-				if(rank == 0) fprintf(stderr, "error opening file for matrix B (%s)\n", argv[4]);
+				if(rank == 0) fprintf(stderr, "error opening file for matrix B (%s)\n", argv[5]);
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			}
 

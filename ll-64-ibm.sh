@@ -17,18 +17,25 @@
 . /etc/profile
 . /etc/profile.d/modules.sh
 
+cd /home/hpc/h039y/h039y29/cannon_src
+
+mpiexec -n 1 ./conversion.o 64x64-1.in  64x64-1.dat
+mpiexec -n 1 ./conversion.o 64x64-2.in  64x64-2.dat
 date
-mpiexec -n 64 ./cannon 64x64-1.in 64x64-2.in
-date
-mpiexec -n 64 ./cannon 128x128-1.in 128x128-2.in
-date
-mpiexec -n 64 ./cannon 256x256-1.in 256x256-2.in
-date
-mpiexec -n 64 ./cannon 512x512-1.in 512x512-2.in
-date
-mpiexec -n 64 ./cannon 1024x1024-1.in 1024x1024-2.in
-date
-mpiexec -n 64 ./cannon 2048x2048-1.in 2048x2048-2.in
-date
-mpiexec -n 64 ./cannon 4096x4096-1.in 4096x4096-2.in
-date
+mpiexec -n 64 ./cannon 64x64-1.dat 64x64-2.dat 64x64-3.dat 64x64-1.in 64x64-2.in test
+
+
+
+#date
+#mpiexec -n 64 ./cannon 128x128-1.in 128x128-2.in
+#date
+#mpiexec -n 64 ./cannon 256x256-1.in 256x256-2.in
+#date
+#mpiexec -n 64 ./cannon 512x512-1.in 512x512-2.in
+#date
+#mpiexec -n 64 ./cannon 1024x1024-1.in 1024x1024-2.in
+#date
+#mpiexec -n 64 ./cannon 2048x2048-1.in 2048x2048-2.in
+#date
+#mpiexec -n 64 ./cannon 4096x4096-1.in 4096x4096-2.in
+#date
