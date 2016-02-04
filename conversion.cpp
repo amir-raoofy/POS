@@ -29,10 +29,9 @@ int main (int argc, char **argv){
 	MPI_File_write(fh, buf,  2,                      MPI_INT,    MPI_STATUS_IGNORE);
 	MPI_File_write(fh, data, (int)(buf[0] * buf[1]), MPI_DOUBLE, MPI_STATUS_IGNORE);
 	
-
-	MPI_File_read(fh, buf, 2, MPI_INT, MPI_STATUS_IGNORE);
+//	MPI_File_read(fh, buf, 2, MPI_INT, MPI_STATUS_IGNORE);
 //	printf ("%d\n%d\n%lf\n%lf\n" ,buf[0], buf[1],buf[2],buf[3]);
-	printf ("%d\n%d\n%lf\n%lf\n" ,buf[0], buf[1],data[0], data[1]);
+//	printf ("%d\n%d\n%lf\n%lf\n" ,buf[0], buf[1],data[0], data[1]);
 
 
 	MPI_File_close(&fh);

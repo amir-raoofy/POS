@@ -102,8 +102,6 @@ int main (int argc, char **argv) {
 	MPI_File_read(fh, B_local_block, B_local_block_size, MPI_DOUBLE, &status);
  	MPI_File_close(&fh);
 
-	start = MPI_Wtime();
-
 	// send dimensions to all peers
 	C_local_block = (double *) malloc (A_local_block_rows * B_local_block_columns * sizeof(double));
 	// C needs to be initialized at 0 (accumulates partial dot-products)
@@ -255,7 +253,7 @@ int main (int argc, char **argv) {
 				}
 				fclose(fp);
 			} else {
-				if(rank == 0) fprintf(stderr, "error opening file for matrix A (%s)\n", argv[4]);
+				fprintf(stderr, "error opening file for matrix A (%s)\n", argv[4]);
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			}
 			if((fp = fopen (argv[5], "r")) != NULL){
@@ -268,7 +266,7 @@ int main (int argc, char **argv) {
 				}
 				fclose(fp);
 			} else {
-				if(rank == 0) fprintf(stderr, "error opening file for matrix B (%s)\n", argv[5]);
+				fprintf(stderr, "error opening file for matrix B (%s)\n", argv[5]);
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			}
 
@@ -278,7 +276,7 @@ int main (int argc, char **argv) {
 		// matrices_a_b_dimensions[2] = row size of B
 		// matrices_a_b_dimensions[3] = column size of B
 			if(matrices_a_b_dimensions[1] != matrices_a_b_dimensions[2]){
-				if(rank == 0) fprintf(stderr, "A's column size (%d) must match B's row size (%d)\n", 
+				fprintf(stderr, "A's column size (%d) must match B's row size (%d)\n", 
 						matrices_a_b_dimensions[1], matrices_a_b_dimensions[2]);
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			}
@@ -288,7 +286,7 @@ int main (int argc, char **argv) {
 					|| matrices_a_b_dimensions[1] % sqrt_size != 0 
 					|| matrices_a_b_dimensions[2] % sqrt_size != 0 
 					|| matrices_a_b_dimensions[3] % sqrt_size != 0 ){
-				if(rank == 0) fprintf(stderr, "cannot distribute work evenly among processe\n"
+				fprintf(stderr, "cannot distribute work evenly among processe\n"
 						"all dimensions (A: r:%d c:%d; B: r:%d c:%d) need to be divisible by %d\n",
 						matrices_a_b_dimensions[0],matrices_a_b_dimensions[1],
 						matrices_a_b_dimensions[2],matrices_a_b_dimensions[3], sqrt_size );
