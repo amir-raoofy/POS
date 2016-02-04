@@ -19,7 +19,7 @@ int main (int argc, char **argv) {
 	MPI_Comm cartesian_grid_communicator, row_communicator, column_communicator;
 	MPI_Status status; 
 	MPI_Request request1, request2;
-	double compute_time = 0, mpi_time = 0 ,init_time = 0, global_init_time = 0, start;
+	double compute_time = 0, mpi_time = 0 ,init_time = 0, global_init_time = 0, output_time = 0, global_output_time = 0, start;
 	MPI_Datatype local_block_A , local_block_B, local_block_C;
 
 
@@ -159,7 +159,9 @@ int main (int argc, char **argv) {
 				(coordinates[0] + 1) % sqrt_size, 0, column_communicator, &status);
 		mpi_time += MPI_Wtime() - start;
 	}
+	
 
+	start = MPI_Wtime();
 	// get C parts from other processes at rank 0
 	matrix_c_dimensions[0]= matrices_a_b_dimensions[0];
 	matrix_c_dimensions[1]= matrices_a_b_dimensions[3];
@@ -177,25 +179,8 @@ int main (int argc, char **argv) {
         MPI_File_write(fh, C_local_block, C_local_block_size, MPI_DOUBLE, &status);
         MPI_File_close(&fh);
 
-
-	if(rank == 0) {
-		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++){
-			C_array[i] = C_local_block[i];
-		}
-		int i;
-		for(i = 1; i < size; i++){
-			MPI_Recv(C_array + (i * A_local_block_rows * B_local_block_columns), A_local_block_rows * B_local_block_columns, 
-				MPI_DOUBLE, i, 0, cartesian_grid_communicator, &status);
-		}
-	} else {
-		MPI_Send(C_local_block, A_local_block_rows * B_local_block_columns, MPI_DOUBLE, 0, 0, cartesian_grid_communicator);
-	}
-
-	
-	if(rank == 0) {
-		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++)
-			C_array[i] = C_local_block[i];
-	}
+	output_time += MPI_Wtime() - start;
+	MPI_Reduce(&output_time ,&global_output_time ,1 ,MPI_DOUBLE, MPI_MAX, 0, cartesian_grid_communicator);
 
 	double * buf = (double *) malloc (sizeof(double) * A_rows * B_columns);
 	double **buff;
@@ -239,7 +224,8 @@ int main (int argc, char **argv) {
 		printf("(%d,%d)x(%d,%d)=(%d,%d)\n", A_rows, A_columns, B_rows, B_columns, A_rows, B_columns);
 		printf("Computation time:	%lf\n", compute_time);
 		printf("MPI time:         	%lf\n", mpi_time);
-		printf("Initialization time:    %lf\n", init_time);
+		printf("Initialization time:    %lf\n", global_init_time);
+		printf("Output time:  		%lf\n", global_output_time);
 
 		if (argc == 7){
 
