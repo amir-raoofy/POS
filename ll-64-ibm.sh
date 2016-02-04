@@ -19,10 +19,10 @@
 
 cd /home/hpc/h039y/h039y29/cannon_src
 
-mpiexec -n 1 ./conversion.o 64x64-1.in  64x64-1.dat
-mpiexec -n 1 ./conversion.o 64x64-2.in  64x64-2.dat
+mpiexec -n 1 ./conversion 64x64-1.in  64x64-1.dat
+mpiexec -n 1 ./conversion 64x64-2.in  64x64-2.dat
 date
-mpiexec -n 64 ./cannon 64x64-1.dat 64x64-2.dat 64x64-3.dat 64x64-1.in 64x64-2.in test
+mpiexec -n 64 ./cannon 64x64-1.dat 64x64-2.dat 64x64-3.dat 64x64-1.in 64x64-2.in
 
 
 
