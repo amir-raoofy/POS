@@ -12,7 +12,7 @@ int main (int argc, char **argv) {
 	int B_rows, B_columns, B_local_block_rows, B_local_block_columns, B_local_block_size;
 	int rank, size, sqrt_size, matrices_a_b_dimensions[4];
 	MPI_Comm cartesian_grid_communicator, row_communicator, column_communicator;
-	double compute_time = 0, mpi_time = 0, init_time=0, start;
+	double compute_time = 0, mpi_time = 0, init_time=0, output_time=0, start;
 	MPI_Status status; 
 
 	// used to manage the cartesian grid
@@ -225,6 +225,7 @@ int main (int argc, char **argv) {
 	}
 
 	// get C parts from other processes at rank 0
+	start = MPI_Wtime();
 	if(rank == 0) {
 		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++){
 			C_array[i] = C_local_block[i];
@@ -254,10 +255,24 @@ int main (int argc, char **argv) {
 			}
 		}
 
+		if (rank == 0){
+	                int row, column;
+       	        	if ((fp = fopen (argv[3], "r")) != NULL){
+                        	for (row = 0; row < matrices_a_b_dimensions[0]; row++){
+                               		for (column = 0; column < matrices_a_b_dimensions[3]; column++)
+                                        	fprintf(fp, "%lf", &C[row][column]);
+                        	}
+                        fclose(fp);
+	            	}
+		}
+		output_time += MPI_Wtime() - start;
+
 		printf("(%d,%d)x(%d,%d)=(%d,%d)\n", A_rows, A_columns, B_rows, B_columns, A_rows, B_columns);
 		printf("Computation time: 	     %lf\n", compute_time);
 		printf("MPI time:         	     %lf\n", mpi_time);
 		printf("initialization time:         %lf\n", init_time);
+		printf("output time:                 %lf\n", output_time);
+
 
 
 		if (argc == 4){
