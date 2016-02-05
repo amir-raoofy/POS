@@ -197,19 +197,6 @@ int main (int argc, char **argv) {
 	if (rank == 0) {
 		// convert the ID array into the actual C matrix 
 		int i, j, k, row, column;
-		for (i = 0; i < sqrt_size; i++){  // block row index
-			for (j = 0; j < sqrt_size; j++){ // block column index
-				for (row = 0; row < A_local_block_rows; row++){
-					for (column = 0; column < B_local_block_columns; column++){
-						C[i * A_local_block_rows + row] [j * B_local_block_columns + column] = 
-							C_array[((i * sqrt_size + j) * A_local_block_rows * B_local_block_columns) 
-							+ (row * B_local_block_columns) + column];
-					}
-				}
-			}
-		}
-
-
 	for (i=0;i< A_rows; i++){
 		for (j=0; j< B_columns; j++){
 			buff[j][i]=buf[i+A_rows*j];
