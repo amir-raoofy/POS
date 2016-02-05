@@ -115,6 +115,8 @@ int main (int argc, char **argv) {
 	}
 */
 	MPI_Bcast(matrices_a_b_dimensions,4 ,MPI_INT ,0 ,cartesian_grid_communicator);
+//	MPI_IBcast(matrices_a_b_dimensions,4 ,MPI_INT ,0 ,cartesian_grid_communicator,&request1);
+//	MPI_Wait(&request1, MPI_STATUS_IGNORE);
 
 	A_rows = matrices_a_b_dimensions[0];
 	A_columns = matrices_a_b_dimensions[1];
