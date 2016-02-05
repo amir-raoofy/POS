@@ -225,7 +225,7 @@ int main (int argc, char **argv) {
 		printf("Computation time:	%lf\n", compute_time);
 		printf("MPI time:         	%lf\n", mpi_time);
 		printf("Initialization time:    %lf\n", global_init_time);
-		printf("Output time:  		%lf\n", global_output_time);
+		printf("output time:  		%lf\n", global_output_time);
 
 		if (argc == 7){
 

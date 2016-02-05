@@ -1,5 +1,5 @@
 #!/bin/bash 
-#@ wall_clock_limit = 00:05:00
+#@ wall_clock_limit = 00:30:00
 #@ job_name = pos-cannon-mpi-ibm
 #@ job_type = Parallel
 #@ output = cannon_64_$(jobid).out
@@ -36,7 +36,6 @@ for (( i=1; i <= $max; ++i ))
                 date
 		mpiexec -n 64 ./cannon 128x128-1.dat 128x128-2.dat 128x128-3.dat 128x128-1.in 128x128-2.in
         done
-
 
 
 mpiexec -n 1 ./conversion 256x256-1.in  256x256-1.dat
