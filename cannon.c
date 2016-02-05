@@ -14,7 +14,7 @@ int main (int argc, char **argv) {
 	MPI_Comm cartesian_grid_communicator, row_communicator, column_communicator;
 	MPI_Status status; 
 	MPI_Request request1, request2;
-	double compute_time = 0, mpi_time = 0 ,init_time = 0, global_init_time = 0, start;
+	double compute_time = 0, mpi_time = 0 ,init_time = 0, global_init_time = 0,output_time=0, start;
 
 	// used to manage the cartesian grid
 	int dimensions[2], periods[2], coordinates[2], remain_dims[2];
@@ -245,6 +245,9 @@ int main (int argc, char **argv) {
 	}
 
 	// get C parts from other processes at rank 0
+
+        start = MPI_Wtime();
+
 /*
 	if(rank == 0) {
 		for(i = 0; i < A_local_block_rows * B_local_block_columns; i++){
@@ -284,10 +287,23 @@ int main (int argc, char **argv) {
 			}
 		}
 
+
+                	if ((fp = fopen (argv[3], "r")) != NULL){
+                        		for (row = 0; row < matrices_a_b_dimensions[0]; row++){
+                                	A[row] = (double *) malloc(matrices_a_b_dimensions[1] * sizeof(double));
+                             		   for (column = 0; column < matrices_a_b_dimensions[3]; column++)
+                                        	fscanf(fp, "%lf", &C[row][column]);
+                        		}		
+                      		  fclose(fp);
+			}
+
+		output_time += MPI_Wtime() - start;
+
 		printf("(%d,%d)x(%d,%d)=(%d,%d)\n", A_rows, A_columns, B_rows, B_columns, A_rows, B_columns);
 		printf("Computation time:	%lf\n", compute_time);
 		printf("MPI time:         	%lf\n", mpi_time);
 		printf("Initialization time:    %lf\n", init_time);
+		printf("output time:            %lf\n", output_time);
 
 		if (argc == 4){
 			// present results on the screen
